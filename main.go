@@ -7,5 +7,6 @@ import (
 
 func main() {
 	var cpu gb.CPU
-	fmt.Println(cpu)
+	cpu.ResetRegisters()
+	fmt.Println(&cpu)
 }
