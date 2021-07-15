@@ -6,91 +6,93 @@ type Byte = uint8
 type Word = uint16
 
 type CPU struct {
-	a Byte
-	f Byte
-	b Byte
-	c Byte
-	d Byte
-	e Byte
-	h Byte
-	l Byte
+	A Byte
+	F Byte /** 7: zero, 6: subtraction, 5 half carry, 4: carry */
+	B Byte
+	C Byte
+	D Byte
+	E Byte
+	H Byte
+	L Byte
 
-	pc Word
-	sp Word
-
-	z     Byte // zero flag
-	n     Byte // subtraction flag
-	half  Byte // half carry flag
-	carry Byte // carry flag
+	PC Word
+	SP Word
 }
 
 func (cpu *CPU) String() string {
 	return fmt.Sprintf(`
-    a: %d
-    f: %d
-    b: %d
-    c: %d
-    d: %d
-    e: %d
-    h: %d
-    l: %d
+    A: %b      F: %b
+    B: %b      C: %b
+    D: %b      E: %b
+    H: %b      L: %b
     
-    pc: %d
-    sp: %d
-    
-    z: %d
-    n: %d
-    h: %d
-    c: %d`,
-		cpu.a, cpu.f, cpu.b, cpu.c, cpu.d, cpu.e, cpu.h, cpu.l, cpu.pc, cpu.sp, cpu.z, cpu.n, cpu.h, cpu.c)
+    PC: %b
+    SP: %b`, cpu.A, cpu.F, cpu.B, cpu.C, cpu.D, cpu.E, cpu.H, cpu.L, cpu.PC, cpu.SP)
 }
 
 func (cpu *CPU) ResetRegisters() {
-	cpu.a = 0x11
-	cpu.f = 0x80
-	cpu.b = 0
-	cpu.c = 0
-	cpu.d = 0xFF
-	cpu.e = 0x56
-	cpu.h = 0
-	cpu.l = 0x0D
+	cpu.A = 0x11
+	cpu.F = 0x80
+	cpu.B = 0
+	cpu.C = 0
+	cpu.D = 0xFF
+	cpu.E = 0x56
+	cpu.H = 0
+	cpu.L = 0x0D
 
-	cpu.pc = 0x100
-	cpu.sp = 0xFFFE
-
-	cpu.z = 0
-	cpu.n = 0
-	cpu.h = 0
-	cpu.c = 0
+	cpu.PC = 0x100
+	cpu.SP = 0xFFFE
 }
 
 func (cpu *CPU) Execute(cycles Word) {
 	for cycles > 0 {
 		// actually run instruction?
-		cpu.pc += 1
+		cpu.PC += 1
 		cycles--
 	}
 }
 
-func (cpu *CPU) setZero() {
+func (cpu *CPU) setHigh(position int) {
+	position -= 1
+	var mask uint8 = 1 << position
+	cpu.F = ((cpu.F & ^mask) | (1 << position))
 }
 
-func (cpu *CPU) setOp() { // necessary if last operation was a subtraction
+func (cpu *CPU) setLow(position int) {
+	position -= 1
+	var mask uint8 = 1 << position
+	cpu.F = ((cpu.F & ^mask) | (0 << position))
 }
 
-func (cpu *CPU) setHalf() { // Set if, in the result of the last operation, the lower half of the byte overflowed past 15
+func (cpu *CPU) setFlag(position int, value bool) {
+	if value {
+		cpu.setHigh(position)
+	} else {
+		cpu.setLow(position)
+	}
 }
 
-func (cpu *CPU) SetCarry() { // Set if the last operation produced a result over 255 (for additions) or under 0 (for subtractions)
+func (cpu *CPU) SetZero(value bool) {
+	cpu.setFlag(7, value)
 }
 
-func (cpu *CPU) setFlag(flag Byte, value bool) {
-	// if value {
-	// cpu.flag = 1
-	// } else {
-	// cpu.flag = 0
-	// }
+func (cpu *CPU) SetSub(value bool) { // necessary if last operation was a subtraction
+	cpu.setFlag(6, value)
+}
+
+func (cpu *CPU) SetHalf(value bool) { // Set if, in the result of the last operation, the lower half of the byte overflowed past 15
+	cpu.setFlag(5, value)
+}
+
+func (cpu *CPU) SetCarry(value bool) { // Set if the last operation produced a result over 255 (for additions) or under 0 (for subtractions)
+	cpu.setFlag(4, value)
 }
 
 func ExampleProgram() {
+	var cpu CPU
+	cpu.ResetRegisters()
+
+	cpu.SetZero(true)
+	cpu.SetCarry(true)
+	fmt.Println(&cpu)
 }
