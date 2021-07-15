@@ -53,13 +53,11 @@ func (cpu *CPU) Execute(cycles Word) {
 }
 
 func (cpu *CPU) setHigh(position int) {
-	position -= 1
 	var mask uint8 = 1 << position
 	cpu.F = ((cpu.F & ^mask) | (1 << position))
 }
 
 func (cpu *CPU) setLow(position int) {
-	position -= 1
 	var mask uint8 = 1 << position
 	cpu.F = ((cpu.F & ^mask) | (0 << position))
 }
@@ -88,6 +86,22 @@ func (cpu *CPU) SetCarry(value bool) { // Set if the last operation produced a r
 	cpu.setFlag(4, value)
 }
 
+func (cpu *CPU) Z() bool {
+	return cpu.F>>7&1 == 1
+}
+
+func (cpu *CPU) N() bool {
+	return cpu.F>>6&1 == 1
+}
+
+func (cpu *CPU) H_F() bool {
+	return cpu.F>>5&1 == 1
+}
+
+func (cpu *CPU) C_F() bool {
+	return cpu.F>>4&1 == 1
+}
+
 func ExampleProgram() {
 	var cpu CPU
 	cpu.ResetRegisters()
@@ -95,4 +109,6 @@ func ExampleProgram() {
 	cpu.SetZero(true)
 	cpu.SetCarry(true)
 	fmt.Println(&cpu)
+
+	fmt.Println(cpu.Z(), cpu.N(), cpu.H_F(), cpu.C_F())
 }
