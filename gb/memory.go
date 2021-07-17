@@ -1,16 +1,21 @@
 package gb
 
-type Memory struct {
-	Cart  [0x8000]Word
-	VRAM  [0x2000]Word
-	ExRAM [0x2000]Word
-	WRAM  [0x1000]Word
+type Memory struct { // make this a map, with the starting address as a value
+	Cart  [0x8000]byte
+	VRAM  [0x2000]byte
+	ExRAM [0x2000]byte
+	WRAM  [0x1000]byte
 	// -- prohibited --
-	OAM [0xA0]Word
+	OAM [0xA0]byte
 	// -- unusable --
-	IO   [0x80]Word
-	HRAM [0x7E]Word
-	IE   Word // 0xFFFF
+	IO   [0x80]byte
+	HRAM [0x7E]byte
+	IE   byte // 0xFFFF
+}
+
+type Section struct {
+	start int
+	end   int
 }
 
 func (mem *Memory) ResetMemory() {
@@ -38,7 +43,7 @@ func (mem *Memory) ResetMemory() {
 	mem.IE = 0
 }
 
-func (mem *Memory) Read(address int) Word {
+func (mem *Memory) Read(address int) byte {
 	switch {
 	case address < 0x8000:
 		return mem.Cart[address]
@@ -62,5 +67,38 @@ func (mem *Memory) Read(address int) Word {
 		return mem.IE
 	default:
 		return 0
+	}
+}
+
+func (mem *Memory) Write(address int, value byte) {
+	switch {
+	case address < 0x8000:
+		mem.Cart[address] = value
+		break
+	case address < 0xA000:
+		mem.VRAM[address-0x8000] = value
+		break
+	case address < 0xC000:
+		mem.ExRAM[address-0xA000] = value
+		break
+	case address < 0xE000:
+		mem.WRAM[address-0xC000] = value
+		break
+	case address < 0xFE00:
+		break
+	case address < 0xFEA0:
+		mem.OAM[address-0xFE00] = value
+		break
+	case address < 0xFF00:
+		break
+	case address < 0xFF80:
+		mem.IO[address-0xFF00] = value
+		break
+	case address < 0xFFFF:
+		mem.HRAM[address-0xFF80] = value
+		break
+	case address == 0xFFFF:
+		mem.IE = value
+		break
 	}
 }

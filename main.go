@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	gb.ExampleProgram()
+	gb.Run()
 }
