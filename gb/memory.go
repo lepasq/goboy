@@ -1,7 +1,7 @@
 package gb
 
 type Memory struct { // make this a map, with the starting address as a value
-	Cart  [0x8000]byte
+	Cart  *Cart
 	VRAM  [0x2000]byte
 	ExRAM [0x2000]byte
 	WRAM  [0x1000]byte
@@ -19,9 +19,7 @@ type Section struct {
 }
 
 func (mem *Memory) ResetMemory() {
-	for i := range mem.Cart {
-		mem.Cart[i] = 0
-	}
+	ResetCart()
 	for i := range mem.VRAM {
 		mem.VRAM[i] = 0
 	}
@@ -46,7 +44,7 @@ func (mem *Memory) ResetMemory() {
 func (mem *Memory) Read(address int) byte {
 	switch {
 	case address < 0x8000:
-		return mem.Cart[address]
+		return mem.Cart.Read(address)
 	case address < 0xA000:
 		return mem.VRAM[address-0x8000]
 	case address < 0xC000:
@@ -73,7 +71,7 @@ func (mem *Memory) Read(address int) byte {
 func (mem *Memory) Write(address int, value byte) {
 	switch {
 	case address < 0x8000:
-		mem.Cart[address] = value
+		mem.Cart.Write(address, value)
 		break
 	case address < 0xA000:
 		mem.VRAM[address-0x8000] = value

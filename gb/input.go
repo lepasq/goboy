@@ -1,8 +1,6 @@
 package gb
 
 import (
-	"fmt"
-
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
@@ -12,6 +10,7 @@ type Window struct {
 	picture *pixel.PictureData
 }
 
+/** The value represents the index of the bit, responsible for the key, at address 0xFF00 */
 var direction map[pixelgl.Button]int
 var action map[pixelgl.Button]int
 
@@ -35,7 +34,7 @@ func run() {
 	configKeys()
 	cfg := pixelgl.WindowConfig{
 		Title:  "Goboy",
-		Bounds: pixel.R(0, 0, 1024, 768),
+		Bounds: pixel.R(0, 0, 166*4, 144*4),
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
@@ -46,7 +45,7 @@ func run() {
 
 	for !win.Closed() {
 		mem.input(win)
-		fmt.Printf("%b\n", mem.IO[0])
+		// fmt.Printf("%b\n", mem.IO[0])
 		win.Update()
 	}
 }
