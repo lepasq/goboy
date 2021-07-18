@@ -66,19 +66,19 @@ func (reg *register) setFlag(position int, value bool) {
 	}
 }
 
-func (cpu *CPU) SetZero(value bool) {
+func (cpu *CPU) SetZ(value bool) {
 	cpu.AF.setFlag(7, value)
 }
 
-func (cpu *CPU) SetSub(value bool) { // necessary if last operation was a subtraction
+func (cpu *CPU) SetN(value bool) { // necessary if last operation was a subtraction
 	cpu.AF.setFlag(6, value)
 }
 
-func (cpu *CPU) SetHalf(value bool) { // Set if, in the result of the last operation, the lower half of the byte overflowed past 15
+func (cpu *CPU) SetH(value bool) { // Set if, in the result of the last operation, the lower half of the byte overflowed past 15
 	cpu.AF.setFlag(5, value)
 }
 
-func (cpu *CPU) SetCarry(value bool) { // Set if the last operation produced a result over 255 (for additions) or under 0 (for subtractions)
+func (cpu *CPU) SetC(value bool) { // Set if the last operation produced a result over 255 (for additions) or under 0 (for subtractions)
 	cpu.AF.setFlag(4, value)
 }
 
@@ -126,8 +126,8 @@ func ExampleProgram() {
 	var cpu CPU
 	cpu.ResetRegisters()
 
-	cpu.SetZero(true)
-	cpu.SetCarry(true)
+	cpu.SetZ(true)
+	cpu.SetC(true)
 	fmt.Println(&cpu)
 
 	fmt.Println(cpu.Z(), cpu.N(), cpu.H(), cpu.C())

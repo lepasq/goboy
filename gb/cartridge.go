@@ -26,12 +26,12 @@ func ResetCart() {
 
 }
 
-func (cart *Cart) Read(address int) byte {
-	return 0
+func (cart *Cart) Read(address Word) byte {
+	return cart.Cart[address]
 }
 
-func (cart *Cart) Write(address int, value byte) {
-
+func (cart *Cart) Write(address Word, value byte) {
+	cart.Cart[address] = value
 }
 
 func (cart *Cart) LoadGame() {
@@ -47,3 +47,14 @@ func (cart *Cart) LoadGame() {
 
 	cart.Cart = data
 }
+
+/*
+* External Ram: can optionally come from cartridge as well
+* MBC for games larger than 32KB
+
+
+* Boot rom: animation, checksum
+last instruction of bootrom launches game rom
+
+* maybe split the [0x8000] array into multiple arrays (boot rom, game rom, ..)
+*/

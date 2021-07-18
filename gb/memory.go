@@ -41,7 +41,7 @@ func (mem *Memory) ResetMemory() {
 	mem.IE = 0
 }
 
-func (mem *Memory) Read(address int) byte {
+func (mem *Memory) Read(address Word) byte {
 	switch {
 	case address < 0x8000:
 		return mem.Cart.Read(address)
@@ -68,7 +68,7 @@ func (mem *Memory) Read(address int) byte {
 	}
 }
 
-func (mem *Memory) Write(address int, value byte) {
+func (mem *Memory) Write(address Word, value byte) {
 	switch {
 	case address < 0x8000:
 		mem.Cart.Write(address, value)
