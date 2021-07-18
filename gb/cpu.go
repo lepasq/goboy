@@ -6,17 +6,17 @@ type Byte = uint8
 type Word = uint16
 
 type CPU struct {
-	A Byte
-	F Byte /** 7: zero, 6: subtraction, 5 half carry, 4: carry */
-	B Byte
-	C Byte
-	D Byte
-	E Byte
-	H Byte
-	L Byte
+	AF register /** 7: zero, 6: subtraction, 5 half carry, 4: carry */
+	BC register
+	DE register
+	HL register
 
-	PC Word
-	SP Word
+	PC register
+	SP register
+}
+
+type register struct {
+	value Word
 }
 
 func (cpu *CPU) String() string {
@@ -27,79 +27,99 @@ func (cpu *CPU) String() string {
     H: %b      L: %b
     
     PC: %b
-    SP: %b`, cpu.A, cpu.F, cpu.B, cpu.C, cpu.D, cpu.E, cpu.H, cpu.L, cpu.PC, cpu.SP)
+    SP: %b`, cpu.AF.Hi(), cpu.AF.Lo(), cpu.BC.Hi(), cpu.BC.Lo(), cpu.DE.Hi(), cpu.DE.Lo(), cpu.HL.Hi(), cpu.HL.Lo(), cpu.PC, cpu.SP)
 }
 
 func (cpu *CPU) ResetRegisters() {
-	cpu.A = 0x11
-	cpu.F = 0x80
-	cpu.B = 0
-	cpu.C = 0
-	cpu.D = 0xFF
-	cpu.E = 0x56
-	cpu.H = 0
-	cpu.L = 0x0D
+	cpu.AF.Set(0x1180)
+	cpu.BC.Set(0)
+	cpu.DE.Set(0xFF56)
+	cpu.HL.Set(0x000D)
 
-	cpu.PC = 0x100
-	cpu.SP = 0xFFFE
+	cpu.PC.Set(0x100)
+	cpu.SP.Set(0xFFFE)
 }
 
 func (cpu *CPU) Execute(cycles Word) {
 	for cycles > 0 {
 		// actually run instruction?
-		cpu.PC += 1
+		cpu.PC.value += 1
 		cycles--
 	}
 }
 
-func (cpu *CPU) setHigh(position int) {
-	var mask uint8 = 1 << position
-	cpu.F = ((cpu.F & ^mask) | (1 << position))
+func (reg *register) setFlagHigh(position int) {
+	var mask Byte = 1 << position
+	reg.SetLo((reg.Lo() & ^mask) | (1 << position))
 }
 
-func (cpu *CPU) setLow(position int) {
-	var mask uint8 = 1 << position
-	cpu.F = ((cpu.F & ^mask) | (0 << position))
+func (reg *register) setFlagLow(position int) {
+	var mask Byte = 1 << position
+	reg.SetLo((reg.Lo() & ^mask) | (0 << position))
 }
 
-func (cpu *CPU) setFlag(position int, value bool) {
+func (reg *register) setFlag(position int, value bool) {
 	if value {
-		cpu.setHigh(position)
+		reg.setFlagHigh(position)
 	} else {
-		cpu.setLow(position)
+		reg.setFlagLow(position)
 	}
 }
 
 func (cpu *CPU) SetZero(value bool) {
-	cpu.setFlag(7, value)
+	cpu.AF.setFlag(7, value)
 }
 
 func (cpu *CPU) SetSub(value bool) { // necessary if last operation was a subtraction
-	cpu.setFlag(6, value)
+	cpu.AF.setFlag(6, value)
 }
 
 func (cpu *CPU) SetHalf(value bool) { // Set if, in the result of the last operation, the lower half of the byte overflowed past 15
-	cpu.setFlag(5, value)
+	cpu.AF.setFlag(5, value)
 }
 
 func (cpu *CPU) SetCarry(value bool) { // Set if the last operation produced a result over 255 (for additions) or under 0 (for subtractions)
-	cpu.setFlag(4, value)
+	cpu.AF.setFlag(4, value)
 }
 
 func (cpu *CPU) Z() bool {
-	return cpu.F>>7&1 == 1
+	return cpu.AF.Lo()>>7&1 == 1
 }
 
 func (cpu *CPU) N() bool {
-	return cpu.F>>6&1 == 1
+	return cpu.AF.Lo()>>6&1 == 1
 }
 
-func (cpu *CPU) H_F() bool {
-	return cpu.F>>5&1 == 1
+func (cpu *CPU) H() bool {
+	return cpu.AF.Lo()>>5&1 == 1
 }
 
-func (cpu *CPU) C_F() bool {
-	return cpu.F>>4&1 == 1
+func (cpu *CPU) C() bool {
+	return cpu.AF.Lo()>>4&1 == 1
+}
+
+func (reg *register) Hi() Byte {
+	return byte(reg.value >> 8)
+}
+
+func (reg *register) Lo() Byte {
+	return byte(reg.value & 0xFF)
+}
+
+func (reg *register) HiLo() Word {
+	return reg.value
+}
+
+func (reg *register) Set(newValue Word) {
+	reg.value = newValue
+}
+
+func (reg *register) SetHi(newValue Byte) {
+	reg.value = uint16(newValue)<<8 | (uint16(reg.value) & 0xFF)
+}
+
+func (reg *register) SetLo(newValue Byte) {
+	reg.value = uint16(newValue) | (uint16(reg.value) & 0xFF00)
 }
 
 func ExampleProgram() {
@@ -110,5 +130,5 @@ func ExampleProgram() {
 	cpu.SetCarry(true)
 	fmt.Println(&cpu)
 
-	fmt.Println(cpu.Z(), cpu.N(), cpu.H_F(), cpu.C_F())
+	fmt.Println(cpu.Z(), cpu.N(), cpu.H(), cpu.C())
 }
